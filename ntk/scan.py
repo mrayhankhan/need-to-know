@@ -17,7 +17,7 @@ INTENDED_DOCS_Q = "MATCH (d:Doc) WHERE size(d.intended) > 0 RETURN d.id, d.title
 GRANT_REACH_Q = f"""
 MATCH (g:Principal)-[r:CAN_READ]->(t) WHERE t.id IN $targets
 OPTIONAL MATCH (p:Person)-[:MEMBER_OF*0..{config.MAX_HOPS}]->(g)
-RETURN g.id, g.name, labels(g)[0], t.id, r.granted_by, r.granted_at, r.reason, collect(DISTINCT p.id)
+RETURN g.id, g.name, [l IN labels(g) WHERE l <> 'Principal'][0], t.id, r.granted_by, r.granted_at, r.reason, collect(DISTINCT p.id)
 """
 
 INTENDED_READERS_Q = f"""

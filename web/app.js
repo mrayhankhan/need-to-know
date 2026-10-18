@@ -78,7 +78,7 @@ function answerHTML(a, compact) {
       <div class="t">${esc(f.label)}${f.leak ? ' <span class="badge bad">not allowed</span>' : ""}</div>
       ${compact ? "" : `<div>${esc(f.text)}</div>`}
       <div class="m">${esc(f.source.title)} · ${esc(f.source.kind)}${f.source.owner ? " · owner " + esc(f.source.owner) : ""} · updated ${esc(f.source.updated)}</div></div></div>`).join("");
-  const locked = a.redacted.map((r) => `<div class="locked"><svg><use href="#i-lock"/></svg><div><b>${esc(r.label)}</b> in ${esc(r.doc_title)}${r.needs.length ? `. Needs ${r.needs.map(esc).join(" or ")} access` : ""}${r.owner ? `. Ask ${esc(r.owner)}.` : "."}</div></div>`).join("");
+  const locked = a.redacted.map((r) => `<div class="locked"><svg><use href="#i-lock"/></svg><div><b>${esc(r.label)}</b>${r.label === r.doc_title ? "" : " in " + esc(r.doc_title)}${r.needs.length ? `. Needs ${r.needs.map(esc).join(" or ")} access` : ""}${r.owner ? `. Ask ${esc(r.owner)}.` : "."}</div></div>`).join("");
   const decisions = a.decisions.map((d) => `<p class="note-line">Decision by ${esc(d.made_by)} on ${esc(d.date)}: ${esc(d.summary)} ${d.source ? `(decided in ${esc(d.source)})` : "(the original discussion is hidden from you)"}</p>`).join("");
   const helpers = [...new Set([...a.facts.map((f) => f.source.owner), ...a.redacted.map((r) => r.owner)].filter(Boolean))];
   const chains = a.facts.filter((f) => f.why).map((f) => {

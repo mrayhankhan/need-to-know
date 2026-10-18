@@ -102,7 +102,7 @@ def people(tenant: str = "northwind"):
     rows_ = db.rows(db.graph(t),
                     "MATCH (p:Principal) WHERE p.id IN $ids "
                     "OPTIONAL MATCH (p)-[:MEMBER_OF]->(g:Group) "
-                    "RETURN p.id, p.name, labels(p)[0], coalesce(p.title, p.role), collect(g.name)",
+                    "RETURN p.id, p.name, [l IN labels(p) WHERE l <> 'Principal'][0], coalesce(p.title, p.role), collect(g.name)",
                     {"ids": PERSONAS[t]}, ro=True)
     by_id = {i: {"id": i, "name": n, "kind": k, "title": ti, "groups": gs} for i, n, k, ti, gs in rows_}
     total = db.rows(db.graph(t), "MATCH (p:Person) RETURN count(p)", ro=True)[0][0]
@@ -125,7 +125,7 @@ def overview(tenant: str = "northwind", viewer: str = ""):
     """What the brain knows, at a glance, from the viewer's point of view."""
     t = _tenant(tenant)
     g = db.graph(t)
-    counts = {k: v for k, v in db.rows(g, "MATCH (n) RETURN labels(n)[0], count(n)", ro=True)}
+    counts = {k: v for k, v in db.rows(g, "MATCH (n) RETURN [l IN labels(n) WHERE l <> 'Principal'][0], count(n)", ro=True)}
     teams = db.rows(g, "MATCH (gr:Group {kind:'team'}) OPTIONAL MATCH (p:Person)-[:MEMBER_OF]->(gr) "
                        "RETURN gr.name, count(p) AS n ORDER BY n DESC", ro=True)
     customers = db.rows(g, "MATCH (c:Customer) OPTIONAL MATCH (c)<-[:MENTIONS]-(:Section)-[:PART_OF]->(d:Doc {kind:'doc'})<-[:OWNS]-(o:Person) "
@@ -219,7 +219,7 @@ def eval_(refresh: bool = False):
 @app.get("/api/stats")
 def stats(tenant: str = "northwind"):
     g = db.graph(_tenant(tenant))
-    labels = db.rows(g, "MATCH (n) RETURN labels(n)[0] AS l, count(n) ORDER BY l", ro=True)
+    labels = db.rows(g, "MATCH (n) RETURN [l IN labels(n) WHERE l <> 'Principal'][0] AS l, count(n) ORDER BY l", ro=True)
     rels = db.rows(g, "MATCH ()-[r]->() RETURN type(r) AS t, count(r) ORDER BY t", ro=True)
     return {"tenant": tenant, "graphs": db.graph_names(), "nodes": dict(labels), "edges": dict(rels)}
 

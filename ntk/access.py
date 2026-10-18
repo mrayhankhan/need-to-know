@@ -35,7 +35,7 @@ RETURN DISTINCT t.id
 EXPLAIN_Q = f"""
 MATCH path = (p:Principal {{id:$pid}})-[:MEMBER_OF*0..{config.MAX_HOPS}]->(g:Principal)-[r:CAN_READ]->(t)
 WHERE t.id IN $targets
-RETURN [n IN nodes(path) | n.name] AS names, [n IN nodes(path) | labels(n)[0]] AS kinds,
+RETURN [n IN nodes(path) | n.name] AS names, [n IN nodes(path) | [l IN labels(n) WHERE l <> 'Principal'][0]] AS kinds,
        [n IN nodes(path) | n.id] AS ids, t.id AS target, r.granted_by AS by, r.granted_at AS at,
        r.reason AS reason, length(path) AS hops
 ORDER BY hops ASC
@@ -44,7 +44,7 @@ LIMIT 1
 
 GRANTEES_Q = """
 MATCH (g:Principal)-[r:CAN_READ]->(t) WHERE t.id IN $targets
-RETURN DISTINCT g.id, g.name, labels(g)[0]
+RETURN DISTINCT g.id, g.name, [l IN labels(g) WHERE l <> 'Principal'][0]
 """
 
 READERS_Q = f"""
