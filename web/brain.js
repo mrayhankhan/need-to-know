@@ -166,7 +166,7 @@
       ctx.globalAlpha = lit(n) ? (n.me || n === hover ? 1 : 0.62) : 0.15;
       ctx.fillStyle = n.me ? C.me : "#DCE3F2";
       const label = n.me ? `You · ${n.label}` : n.label.length > 22 ? n.label.slice(0, 21) + "…" : n.label;
-      ctx.fillText(label, n.x, n.y - (R[n.kind] || 4) - 7);
+      ctx.fillText(label, n.x, n.me ? n.y + 20 : n.y - (R[n.kind] || 4) - 7);
       ctx.globalAlpha = 1;
     });
   }
