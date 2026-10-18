@@ -7,10 +7,12 @@
 <meta name="description" content="A company brain that knows who is allowed to know what. Built on FalkorDB.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Sora:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="grid-bg" aria-hidden="true"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-ask" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   <symbol id="i-company" viewBox="0 0 24 24"><path d="M4 20V6l8-3v17M12 9h8v11M7 9h2M7 13h2M15 13h2M15 17h2M7 17h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
@@ -51,17 +53,31 @@
 
     <div id="notice"></div>
 
-    <section id="v-ask" class="view narrow">
-      <div class="hero">
-        <h1 id="hero-title">Ask your company anything</h1>
-        <p class="muted">Answers come from documents, tickets and chats, with sources. Each person only sees what they are allowed to see.</p>
+    <section id="v-ask" class="view">
+      <div class="stage">
+        <div class="stage-copy">
+          <span class="kicker"><span class="dot"></span>Company brain · live on FalkorDB</span>
+          <h1 id="hero-title">Ask your company anything</h1>
+          <p>Every question travels through the company's graph, from you, through your teams, to the documents you are allowed to read. Watch it think.</p>
+          <div id="pills" class="pills"></div>
+        </div>
+        <div id="brain" class="brain" aria-label="The company graph drawn as a brain. Left: people, teams and AI agents. Right: spaces, documents and customers."></div>
+        <div class="legend">
+          <span><i style="background:#FFB547"></i>You</span>
+          <span><i style="background:#C7D2FE"></i>People &amp; teams</span>
+          <span><i style="background:#C4A7FF"></i>AI agents</span>
+          <span><i style="background:#5EEAD4"></i>Knowledge you can read</span>
+          <span><i style="background:#4B5263"></i>Hidden from you</span>
+        </div>
       </div>
-      <form id="ask-form" class="ask">
-        <input id="q" autocomplete="off" placeholder="Ask a question…" aria-label="Your question">
-        <button type="submit" aria-label="Ask"><svg><use href="#i-send"/></svg></button>
-      </form>
-      <div id="chips" class="chips"></div>
-      <div id="thread"></div>
+      <div class="col-narrow">
+        <form id="ask-form" class="ask">
+          <input id="q" autocomplete="off" placeholder="Ask a question about the company…" aria-label="Your question">
+          <button type="submit" aria-label="Ask"><svg><use href="#i-send"/></svg><span>Ask</span></button>
+        </form>
+        <div id="chips" class="chips"></div>
+        <div id="thread"></div>
+      </div>
     </section>
 
     <section id="v-company" class="view" hidden></section>
@@ -91,6 +107,7 @@
     <section id="v-how" class="view narrow" hidden></section>
   </div>
 </div>
+<script src="/static/brain.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

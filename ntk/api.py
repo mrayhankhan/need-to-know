@@ -152,6 +152,55 @@ def overview(tenant: str = "northwind", viewer: str = ""):
             "documents": {"total": docs_total, "visible": docs_visible}}
 
 
+@app.get("/api/brain")
+def brain_map(tenant: str = "northwind", viewer: str = ""):
+    """A compact picture of the company graph for the animated brain view, coloured for one viewer."""
+    t = _tenant(tenant)
+    g = db.graph(t)
+    cat = access.catalog(t)
+    nodes, keep = [], set()
+
+    def add(nid, label, kind, **extra):
+        if nid not in keep:
+            keep.add(nid)
+            nodes.append({"id": nid, "label": label, "kind": kind, **extra})
+
+    for gid, name, kind, team in db.rows(g, "MATCH (x:Group) RETURN x.id, x.name, x.kind, x.team", ro=True):
+        add(gid, name, "team" if kind == "team" else "group", team=team or "", sub=kind)
+    per_team: dict[str, int] = {}
+    for pid, name, team, ext in db.rows(g, "MATCH (p:Person) RETURN p.id, p.name, p.team, p.external ORDER BY p.id", ro=True):
+        if pid in PERSONAS[t] or per_team.get(team, 0) < (2 if ext else 4):
+            per_team[team] = per_team.get(team, 0) + (0 if pid in PERSONAS[t] else 1)
+            add(pid, name, "person", team=team or "", me=pid == viewer)
+    for aid, name in db.rows(g, "MATCH (a:Agent) RETURN a.id, a.name", ro=True):
+        add(aid, name, "agent", me=aid == viewer)
+    for sid, name in db.rows(g, "MATCH (s:Space) RETURN s.id, s.name", ro=True):
+        add(sid, name, "space")
+    readable = access.readable_set(t, viewer) if viewer else set()
+    for did, d in cat.docs.items():
+        secs = [s for s, v in cat.sections.items() if v["doc"] == did]
+        seen = sum(1 for s in secs if s in readable)
+        state = "open" if seen == len(secs) else ("partial" if seen else "locked")
+        add(did, d["title"], "doc", space=d["space"], state=state if viewer else "")
+    for cid, name in db.rows(g, "MATCH (c:Customer) RETURN c.id, c.name", ro=True):
+        add(cid, name, "customer")
+
+    edges = set()
+    for a, b in db.rows(g, "MATCH (a:Principal)-[:MEMBER_OF]->(b:Group) RETURN a.id, b.id", ro=True):
+        if a in keep and b in keep:
+            edges.add((a, b, "member"))
+    for a, tgt in db.rows(g, "MATCH (a:Principal)-[:CAN_READ]->(x) WHERE x:Space OR x:Doc OR x:Section RETURN a.id, x.id", ro=True):
+        tgt = cat.sections[tgt]["doc"] if tgt in cat.sections else tgt
+        if a in keep and tgt in keep:
+            edges.add((a, tgt, "grant"))
+    for did, d in cat.docs.items():
+        edges.add((did, d["space"], "in"))
+    for did, cid in db.rows(g, "MATCH (s:Section)-[:MENTIONS]->(c:Customer) RETURN DISTINCT s.doc, c.id", ro=True):
+        if did in keep and cid in keep:
+            edges.add((did, cid, "about"))
+    return {"nodes": nodes, "edges": [{"s": a, "t": b, "kind": k} for a, b, k in sorted(edges)]}
+
+
 @app.get("/api/memory")
 def my_memory(asker: str, tenant: str = "northwind"):
     return memory.recall(_tenant(tenant), asker, limit=20)

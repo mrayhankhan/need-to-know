@@ -20,6 +20,7 @@ async function staticApi(path, body) {
     case "tenants": return SNAP.tenants;
     case "people": return SNAP.people[q("tenant")];
     case "overview": return need(SNAP.overview?.[q("tenant")]?.[q("viewer")]);
+    case "brain": return need(SNAP.brain?.[q("tenant")]?.[q("viewer")]);
     case "ask": return ask(body.tenant, body.asker, body.question, body.mode);
     case "compare": return body.askers.map((a) => ask(body.tenant, a, body.question, body.mode));
     case "memory": return SNAP.memory[q("tenant")]?.[q("asker")] || [];
@@ -61,7 +62,7 @@ function setViewer(id) {
   renderWho();
   $("#who-menu").hidden = true;
   $("#who").setAttribute("aria-expanded", "false");
-  if (S.view === "ask" && S.lastQ) { $("#thread").innerHTML = ""; ask(S.lastQ); }
+  loadBrain().then(() => { if (S.view === "ask" && S.lastQ) { $("#thread").innerHTML = ""; ask(S.lastQ); } });
   if (S.view === "company") renderCompany();
 }
 
@@ -104,10 +105,11 @@ async function ask(q) {
   $("#q").value = "";
   const wrap = document.createElement("div");
   wrap.style.display = "flex"; wrap.style.flexDirection = "column"; wrap.style.gap = "10px";
-  wrap.innerHTML = `<div class="qline">${esc(q)}</div><div class="answer spin"><p class="muted">Checking what ${esc(firstName(S.viewer))} can see…</p></div>`;
+  wrap.innerHTML = `<div class="qline">${esc(q)}</div><div class="answer"><div class="thinking"><i></i><i></i><i></i><span>Following ${esc(firstName(S.viewer))}'s path through the company graph…</span></div></div>`;
   $("#thread").prepend(wrap);
   try {
     const a = await api("/api/ask", { tenant: S.tenant, asker: S.viewer, question: q, mode: "graph" });
+    if (window.Brain && S.view === "ask") await window.Brain.think(a);
     wrap.lastElementChild.outerHTML = answerHTML(a);
     const sel = wrap.querySelector("[data-compare]");
     sel.onchange = async () => {
@@ -274,6 +276,17 @@ async function loadEval() {
     <p class="tiny muted">${r.askers} people and agents × ${r.questions} questions. The graph matches the answer key on ${r.agreement_with_ground_truth_pct}% of ${r.checked_pairs.toLocaleString()} checks. Median access check ${r.latency_ms.p50} ms.</p>`;
 }
 
+/* ---------- the brain ---------- */
+async function loadBrain() {
+  if (!window.Brain) return;
+  try {
+    const [b, o] = await Promise.all([api(`/api/brain?tenant=${S.tenant}&viewer=${S.viewer}`), api(`/api/overview?tenant=${S.tenant}&viewer=${S.viewer}`)]);
+    window.Brain.setData(b, S.tenant);
+    const c = o.counts;
+    $("#pills").innerHTML = `<span><b>${(c.Person || 0).toLocaleString()}</b> people</span><span><b>${o.teams.length}</b> teams</span><span><b>${o.documents.total}</b> documents</span><span><b>${c.Agent || 0}</b> AI agents</span><span><b>${o.documents.visible}</b> readable by ${esc(firstName(S.viewer))}</span>`;
+  } catch (e) { $("#pills").innerHTML = ""; }
+}
+
 /* ---------- navigation and boot ---------- */
 const TITLES = { ask: "Ask", company: "Company", agents: "Agents at work", health: "Health check", how: "How it works" };
 function showView(v) {
@@ -297,6 +310,7 @@ async function loadPeople() {
   if (!S.personas.find((p) => p.id === S.viewer)) S.viewer = S.personas[0]?.id;
   renderWho();
   $("#hero-title").textContent = `Ask ${S.company[S.tenant].split(" ")[0]} anything`;
+  await loadBrain();
   $("#chips").innerHTML = (S.samples[S.tenant] || []).map((q) => `<button class="chip" type="button">${esc(q)}</button>`).join("");
 }
 document.addEventListener("click", (e) => {
@@ -314,6 +328,7 @@ $("#reset-demo").onclick = async () => { await api("/api/reset", { tenant: S.ten
 $("#tenant").onchange = async (e) => { S.tenant = e.target.value; $("#thread").innerHTML = ""; S.lastQ = ""; await loadPeople(); showView(S.view); };
 
 (async function boot() {
+  if (window.Brain) window.Brain.mount($("#brain"));
   try {
     const h = await api("/api/health");
     $("#status").textContent = window.NTK_STATIC ? "Online demo" : `FalkorDB ${h.ok ? "connected" : "unreachable"}`;

@@ -37,7 +37,7 @@ def main():
     reset_all()
     c = TestClient(app)
     snap = {"ask": {}, "memory": {}, "peek": {}, "case": {}, "approve": {}, "scan": {}, "scan_test": {},
-            "scan_apply": {}, "people": {}, "stats": {}, "overview": {}}
+            "scan_apply": {}, "people": {}, "stats": {}, "overview": {}, "brain": {}}
     snap["health"] = {**c.get("/api/health").json(), "llm": False}
     snap["tenants"] = c.get("/api/tenants").json()
     for t in PERSONAS:
@@ -45,6 +45,7 @@ def main():
 
     for t, people in PERSONAS.items():
         snap["overview"][t] = {who: c.get(f"/api/overview?tenant={t}&viewer={who}").json() for who in people}
+        snap["brain"][t] = {who: c.get(f"/api/brain?tenant={t}&viewer={who}").json() for who in people}
 
     # Every persona x sample question x access mode
     for t, people in PERSONAS.items():
