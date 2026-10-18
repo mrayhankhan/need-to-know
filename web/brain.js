@@ -142,9 +142,14 @@
     g.strokeStyle = "rgba(245,154,178,0.7)"; g.lineWidth = 0.45;
     g.stroke(P.stem); g.stroke(P.cerebellum); g.stroke(P.cerebrum);
     g.shadowBlur = 0;
-    g.font = "600 1.7px Geist, system-ui, sans-serif"; g.textAlign = "center"; g.fillStyle = "rgba(255,226,234,0.55)";
-    Object.values(LOBES).forEach((L) => { g.fillText(L.label, L.at[0], L.at[1]); });
-    g.textAlign = "left"; g.fillText("FALKORDB · brain stem", 61.5, 70.5);
+    // labels in real pixels (tiny scaled fonts get broken letter spacing)
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const fs = Math.max(9, Math.min(12, S * 1.35));
+    g.font = `600 ${fs}px Geist, system-ui, sans-serif`; g.textAlign = "center"; g.fillStyle = "rgba(255,226,234,0.6)";
+    if ("letterSpacing" in g) g.letterSpacing = "1.5px";
+    Object.values(LOBES).forEach((L) => { const [x, y] = toPx(L.at[0], L.at[1]); g.fillText(L.label, x, y); });
+    g.textAlign = "right"; const [sx, sy] = toPx(51.5, 71); g.fillText("FALKORDB", sx, sy);
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
     texture = c;
   }
 
