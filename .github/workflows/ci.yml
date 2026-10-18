@@ -31,7 +31,7 @@ jobs:
         run: pytest -q -rA 2>&1 | tee results-tests.txt; exit ${PIPESTATUS[0]}
         continue-on-error: true
       - name: Retrieval check
-        run: python scripts/diag.py
+        run: PYTHONPATH=. python scripts/diag.py
       - name: Benchmark (graph on vs off)
         run: python -m ntk.eval --out results/eval.json && cp results-tests.txt results/tests.txt
       - name: Start the app
