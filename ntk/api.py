@@ -22,7 +22,9 @@ PERSONAS = {
 }
 SAMPLES = {
     "northwind": ["Why did Acme Corp's invoice go up in October?",
+                  "Who owns the Acme Corp account?",
                   "What does Acme Corp pay us and when do they renew?",
+                  "Who decided that loyalty discounts end after 12 months?",
                   "What are the engineering salary bands?",
                   "How much runway do we have?",
                   "Why don't we retry payments on the client side?"],
@@ -116,6 +118,38 @@ def ask(b: AskBody):
 def compare(b: CompareBody):
     t = _tenant(b.tenant)
     return [brain.ask(t, a, b.question, _mode(b.mode)) for a in b.askers[:3]]
+
+
+@app.get("/api/overview")
+def overview(tenant: str = "northwind", viewer: str = ""):
+    """What the brain knows, at a glance, from the viewer's point of view."""
+    t = _tenant(tenant)
+    g = db.graph(t)
+    counts = {k: v for k, v in db.rows(g, "MATCH (n) RETURN labels(n)[0], count(n)", ro=True)}
+    teams = db.rows(g, "MATCH (gr:Group {kind:'team'}) OPTIONAL MATCH (p:Person)-[:MEMBER_OF]->(gr) "
+                       "RETURN gr.name, count(p) AS n ORDER BY n DESC", ro=True)
+    customers = db.rows(g, "MATCH (c:Customer) OPTIONAL MATCH (c)<-[:MENTIONS]-(:Section)-[:PART_OF]->(d:Doc {kind:'doc'})<-[:OWNS]-(o:Person) "
+                           "RETURN c.name, collect(DISTINCT o.name)", ro=True)
+    readable = access.readable_set(t, viewer) if viewer else set()
+    cat = access.catalog(t)
+    decisions, hidden = [], 0
+    for summary, who, date, doc_id, kind in db.rows(
+            g, "MATCH (p:Person)-[:MADE]->(x:Decision) OPTIONAL MATCH (d:Doc)-[:DOCUMENTS]->(x) "
+               "RETURN x.summary, p.name, x.date, d.id, x.kind ORDER BY x.date DESC", ro=True):
+        visible = kind == "access-change" or any(cat.sections[s]["doc"] == doc_id for s in readable)
+        if visible:
+            decisions.append({"summary": summary, "by": who, "date": (date or "")[:10]})
+        else:
+            hidden += 1
+    bots = db.rows(g, "MATCH (a:Agent) OPTIONAL MATCH (a)-[:MEMBER_OF]->(gr:Group) RETURN a.name, a.role, collect(gr.name)", ro=True)
+    docs_total = len(cat.docs)
+    docs_visible = len({cat.sections[s]["doc"] for s in readable})
+    return {"company": config.TENANTS[t], "counts": counts,
+            "teams": [{"name": n, "people": c} for n, c in teams],
+            "customers": [{"name": n, "owner": (o or [None])[0]} for n, o in customers],
+            "decisions": decisions, "decisions_hidden": hidden,
+            "agents": [{"name": n, "role": r, "groups": gs} for n, r, gs in bots],
+            "documents": {"total": docs_total, "visible": docs_visible}}
 
 
 @app.get("/api/memory")

@@ -7,133 +7,90 @@
 <meta name="description" content="A company brain that knows who is allowed to know what. Built on FalkorDB.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header class="top">
-  <div class="wrap top-row">
-    <div class="brand">
-      <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
-      <div>
-        <h1>Need-to-Know</h1>
-        <p class="tag">A company brain that knows who is allowed to know what</p>
-      </div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-ask" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-company" viewBox="0 0 24 24"><path d="M4 20V6l8-3v17M12 9h8v11M7 9h2M7 13h2M15 13h2M15 17h2M7 17h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-agents" viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 4v4M9 13h.01M15 13h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-health" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-how" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z M14 3v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="logo"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><b>Need-to-Know</b></div>
+    <nav class="nav" aria-label="Sections">
+      <button data-view="ask" class="on"><svg><use href="#i-ask"/></svg>Ask</button>
+      <button data-view="company"><svg><use href="#i-company"/></svg>Company</button>
+      <button data-view="agents"><svg><use href="#i-agents"/></svg>Agents at work</button>
+      <button data-view="health"><svg><use href="#i-health"/></svg>Health check</button>
+      <button data-view="how"><svg><use href="#i-how"/></svg>How it works</button>
+    </nav>
+    <div class="side-foot">
+      <label class="field">Company<select id="tenant"></select></label>
+      <p id="status" class="tiny"></p>
+      <button id="reset-demo" class="text-btn tiny" type="button">Reset demo data</button>
     </div>
-    <div class="controls">
-      <label class="ctl">Company
-        <select id="tenant"></select>
-      </label>
-      <div class="ctl">Access check
-        <div class="seg" id="mode" role="radiogroup" aria-label="Access check mode">
-          <button data-mode="graph" class="on" role="radio" aria-checked="true">Graph</button>
-          <button data-mode="flat" role="radio" aria-checked="false">Flat list</button>
-          <button data-mode="off" role="radio" aria-checked="false">Off</button>
-        </div>
+  </aside>
+
+  <div class="main">
+    <header class="bar">
+      <h2 id="view-title">Ask</h2>
+      <div class="viewer">
+        <span class="tiny muted">Viewing as</span>
+        <button id="who" class="who" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+        <div id="who-menu" class="menu" role="listbox" hidden></div>
       </div>
-    </div>
-  </div>
-  <div class="wrap personas-row">
-    <span class="eyebrow">Ask as</span>
-    <div id="personas" class="personas"></div>
-  </div>
-  <nav class="wrap tabs" role="tablist">
-    <button class="tab on" data-tab="ask">Ask</button>
-    <button class="tab" data-tab="compare">Same question, two people</button>
-    <button class="tab" data-tab="agents">Agents &amp; handoffs</button>
-    <button class="tab" data-tab="memory">Private memory</button>
-    <button class="tab" data-tab="scan">Oversharing</button>
-    <button class="tab" data-tab="proof">Proof</button>
-  </nav>
-</header>
+    </header>
 
-<main class="wrap">
-  <div id="mode-banner" class="banner" hidden></div>
+    <div id="notice"></div>
 
-  <section id="tab-ask" class="panel">
-    <div class="grid2">
-      <div class="col">
-        <form id="ask-form" class="askbox">
-          <input id="q" autocomplete="off" placeholder="Ask anything about the company…" aria-label="Question">
-          <button type="submit" class="primary">Ask</button>
-        </form>
-        <div id="samples" class="chips"></div>
-        <div id="answer"></div>
+    <section id="v-ask" class="view narrow">
+      <div class="hero">
+        <h1 id="hero-title">Ask your company anything</h1>
+        <p class="muted">Answers come from documents, tickets and chats, with sources. Each person only sees what they are allowed to see.</p>
       </div>
-      <aside class="col">
-        <div class="card">
-          <div class="card-h"><h3>Why you can see this</h3><span class="muted small">FalkorDB access path</span></div>
-          <div id="pathviz" class="pathviz"><p class="muted small">Ask a question to see the chain of groups that gives you access.</p></div>
-        </div>
-        <div class="card" id="mem-card" hidden>
-          <div class="card-h"><h3>From your memory</h3><span class="muted small">only you can see this</span></div>
-          <div id="mem-snip"></div>
-        </div>
-      </aside>
-    </div>
-  </section>
+      <form id="ask-form" class="ask">
+        <input id="q" autocomplete="off" placeholder="Ask a question…" aria-label="Your question">
+        <button type="submit" aria-label="Ask"><svg><use href="#i-send"/></svg></button>
+      </form>
+      <div id="chips" class="chips"></div>
+      <div id="thread"></div>
+    </section>
 
-  <section id="tab-compare" class="panel" hidden>
-    <form id="cmp-form" class="askbox">
-      <input id="cq" autocomplete="off" aria-label="Question" value="Why did Acme Corp's invoice go up in October?">
-      <select id="ca" aria-label="First person"></select>
-      <select id="cb" aria-label="Second person"></select>
-      <button type="submit" class="primary">Compare</button>
-    </form>
-    <div id="cmp" class="grid2"></div>
-  </section>
+    <section id="v-company" class="view" hidden></section>
 
-  <section id="tab-agents" class="panel" hidden>
-    <div class="card intro">
-      <h3>Case #4821: Acme asks why their invoice went up</h3>
-      <p class="muted">The Support Agent and the Finance Agent share one case in the graph. Each sees only what its own groups allow. Watch the Finance-only note stay out of the customer reply.</p>
+    <section id="v-agents" class="view narrow" hidden>
+      <div class="hero left">
+        <h1>Agents at work</h1>
+        <p class="muted">Two AI agents handle one customer case together. Each one only sees what its own team may see, so private details never reach the customer.</p>
+      </div>
       <div class="row gap">
-        <button id="run-case" class="primary">Run the case</button>
-        <button id="run-case-off" class="ghost danger">Run it with access checks off</button>
+        <button id="run-case" class="btn primary" type="button">Run the case</button>
+        <button id="run-case-off" class="btn" type="button">Run it without access checks</button>
       </div>
-    </div>
-    <div id="case-out"></div>
-  </section>
+      <div id="case-out"></div>
+    </section>
 
-  <section id="tab-memory" class="panel" hidden>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-h"><h3>Your memory</h3><span class="muted small" id="mem-who"></span></div>
-        <div id="mem-list"></div>
+    <section id="v-health" class="view narrow" hidden>
+      <div class="hero left">
+        <h1>Health check</h1>
+        <p class="muted">The brain checks itself: who <em>should</em> be able to open each sensitive document, and who actually can. Every fix is tested on a copy of the company before a person approves it.</p>
       </div>
-      <div class="card">
-        <div class="card-h"><h3>Try to read someone else's memory</h3></div>
-        <p class="muted small">Memories hang off their owner in the graph. Every memory query starts from <em>your</em> node, so there is no path to anyone else's.</p>
-        <div class="row gap"><select id="peek-owner" aria-label="Whose memory"></select><button id="peek" class="ghost">Try it</button></div>
-        <div id="peek-out"></div>
-      </div>
-    </div>
-  </section>
+      <button id="run-scan" class="btn primary" type="button">Run the health check</button>
+      <div id="scan-out"></div>
+      <div id="audit-out"></div>
+    </section>
 
-  <section id="tab-scan" class="panel" hidden>
-    <div class="card intro">
-      <h3>Who can really open what?</h3>
-      <p class="muted">Need-to-Know walks the access graph backwards from every sensitive document, compares who <em>should</em> read it with who <em>can</em>, and tests each fix on a copy of the company before anyone approves it.</p>
-      <button id="run-scan" class="primary">Scan the company</button>
-    </div>
-    <div id="scan-out"></div>
-    <div id="audit-out"></div>
-  </section>
-
-  <section id="tab-proof" class="panel" hidden>
-    <div class="card intro">
-      <h3>Switch the graph off and see what breaks</h3>
-      <p class="muted">Every (person, question) pair is checked against ground truth computed independently in plain Python from the company data.</p>
-      <button id="run-eval" class="primary">Load results</button>
-    </div>
-    <div id="eval-out"></div>
-  </section>
-</main>
-
-<footer class="wrap foot">
-  <span>Built on FalkorDB: nested-group traversal, full-text search, GRAPH.COPY forks, one graph per company.</span>
-  <span class="row gap"><span id="health" class="muted"></span><button id="reset-demo" class="ghost" type="button">Reset demo data</button></span>
-</footer>
+    <section id="v-how" class="view narrow" hidden></section>
+  </div>
+</div>
 <script src="/static/app.js"></script>
 </body>
 </html>
