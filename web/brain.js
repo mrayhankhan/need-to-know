@@ -6,9 +6,9 @@
 (function () {
   "use strict";
   const C = {
-    person: "#F6DCE4", team: "#F59AB2", group: "#D7A6B8", agent: "#C9B8FF", space: "#94E6C4", doc: "#94E6C4",
-    customer: "#FFC9A8", me: "#FFD27A", open: "#94E6C4", locked: "#5F4F58", bad: "#FF5C6C",
-    member: "245,154,178", grant: "148,230,196", in: "148,230,196", about: "255,201,168",
+    person: "#A3A8B2", team: "#111318", group: "#626875", agent: "#111318", space: "#2F54EB", doc: "#2F54EB",
+    customer: "#626875", me: "#111318", open: "#2F54EB", locked: "#CDD1D8", bad: "#D93F3F",
+    member: "17,19,24", grant: "47,84,235", in: "47,84,235", about: "98,104,117",
   };
   const R = { team: 4.8, group: 3.6, person: 2.3, agent: 4.2, space: 4.8, doc: 3, customer: 4.4 };
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -117,12 +117,12 @@
     g.setTransform(dpr * S, 0, 0, dpr * S, dpr * OX, dpr * OY);
     const tissue = (path, a, b) => {
       const gr = g.createRadialGradient(45, 26, 4, 50, 34, 60);
-      gr.addColorStop(0, `rgba(245,154,178,${a})`); gr.addColorStop(1, `rgba(150,70,100,${b})`);
+      gr.addColorStop(0, `rgba(17,19,24,${a})`); gr.addColorStop(1, `rgba(17,19,24,${b})`);
       g.fillStyle = gr; g.fill(path);
     };
-    tissue(P.stem, 0.16, 0.08);
-    tissue(P.cerebellum, 0.2, 0.08);
-    tissue(P.cerebrum, 0.17, 0.05);
+    tissue(P.stem, 0.05, 0.025);
+    tissue(P.cerebellum, 0.05, 0.02);
+    tissue(P.cerebrum, 0.03, 0.012);
     g.save(); g.clip(P.cerebrum);
     const r = rng("gyri");
     g.lineCap = "round";
@@ -130,22 +130,22 @@
       let x = 6 + r() * 90, y = 2 + r() * 56;
       g.beginPath(); g.moveTo(x, y);
       for (let s = 0; s < 6; s++) { const nx = x + (r() - 0.5) * 9, ny = y + (r() - 0.5) * 7; g.quadraticCurveTo((x + nx) / 2 + (r() - 0.5) * 4, (y + ny) / 2 + (r() - 0.5) * 4, nx, ny); x = nx; y = ny; }
-      g.strokeStyle = "rgba(255,214,226,0.07)"; g.lineWidth = 0.9 + r() * 0.8; g.stroke();
+      g.strokeStyle = "rgba(17,19,24,0.05)"; g.lineWidth = 0.9 + r() * 0.8; g.stroke();
     }
     g.restore();
     g.save(); g.clip(P.cerebellum);
-    for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(62, 51.5 + k * 1.6); g.bezierCurveTo(70, 49.5 + k * 1.9, 82, 50 + k * 1.9, 94, 53 + k * 1.4); g.strokeStyle = "rgba(255,214,226,0.13)"; g.lineWidth = 0.35; g.stroke(); }
+    for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(62, 51.5 + k * 1.6); g.bezierCurveTo(70, 49.5 + k * 1.9, 82, 50 + k * 1.9, 94, 53 + k * 1.4); g.strokeStyle = "rgba(17,19,24,0.16)"; g.lineWidth = 0.35; g.stroke(); }
     g.restore();
     g.lineCap = "round";
-    SULCI.forEach((d, i) => { g.strokeStyle = `rgba(245,154,178,${i < 2 ? 0.3 : 0.15})`; g.lineWidth = i < 2 ? 0.38 : 0.26; g.stroke(new Path2D(d)); });
-    g.shadowColor = "rgba(245,154,178,0.6)"; g.shadowBlur = 14;
-    g.strokeStyle = "rgba(245,154,178,0.7)"; g.lineWidth = 0.45;
+    SULCI.forEach((d, i) => { g.strokeStyle = `rgba(17,19,24,${i < 2 ? 0.3 : 0.14})`; g.lineWidth = i < 2 ? 0.38 : 0.26; g.stroke(new Path2D(d)); });
+    g.shadowBlur = 0;
+    g.strokeStyle = "rgba(17,19,24,0.85)"; g.lineWidth = 0.3;
     g.stroke(P.stem); g.stroke(P.cerebellum); g.stroke(P.cerebrum);
     g.shadowBlur = 0;
     // labels in real pixels (tiny scaled fonts get broken letter spacing)
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const fs = Math.max(9, Math.min(12, S * 1.35));
-    g.font = `600 ${fs}px Geist, system-ui, sans-serif`; g.textAlign = "center"; g.fillStyle = "rgba(255,226,234,0.6)";
+    g.font = `600 ${fs}px Geist, system-ui, sans-serif`; g.textAlign = "center"; g.fillStyle = "rgba(17,19,24,0.4)";
     if ("letterSpacing" in g) g.letterSpacing = "1.5px";
     Object.values(LOBES).forEach((L) => { const [x, y] = toPx(L.at[0], L.at[1]); g.fillText(L.label, x, y); });
     g.textAlign = "right"; const [sx, sy] = toPx(51.5, 71); g.fillText("FALKORDB", sx, sy);
@@ -167,7 +167,7 @@
     edges.forEach((e) => {
       const a = byId[e.s], b = byId[e.t]; if (!a || !b) return;
       const on = !focus || (focus.has(a.id) && focus.has(b.id));
-      ctx.strokeStyle = `rgba(${C[e.kind] || C.member},${on ? (e.kind === "grant" ? 0.16 + breathe : 0.1) : 0.025})`;
+      ctx.strokeStyle = `rgba(${C[e.kind] || C.member},${on ? (e.kind === "grant" ? 0.2 + breathe : 0.09) : 0.03})`;
       ctx.lineWidth = 0.8;
       ctx.beginPath(); ctx.moveTo(a.x, a.y);
       ctx.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 - Math.abs(a.x - b.x) * 0.1, b.x, b.y); ctx.stroke();
@@ -191,16 +191,17 @@
       let col = n.me ? C.me : C[n.kind] || C.person;
       if (n.kind === "doc" && n.state) col = n.state === "locked" ? C.locked : C.open;
       ctx.globalAlpha = on ? 1 : 0.2;
-      ctx.shadowBlur = n.me ? 20 : (n.kind === "doc" && n.state !== "locked") || n.kind === "space" || n.kind === "team" || n.kind === "agent" ? 10 : 0;
+      ctx.shadowBlur = (n.kind === "doc" && n.state !== "locked") || n.kind === "space" ? 7 : 0;
       ctx.shadowColor = col; ctx.fillStyle = col;
       ctx.beginPath();
-      if (n.kind === "agent") ctx.roundRect(n.x - r, n.y - r, r * 2, r * 2, 2.5); else ctx.arc(n.x, n.y, n.me ? 5.5 : r, 0, 7);
-      ctx.fill(); ctx.shadowBlur = 0;
+      if (n.kind === "agent") { ctx.roundRect(n.x - r, n.y - r, r * 2, r * 2, 2); ctx.fillStyle = "#FFFFFF"; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke(); }
+      else { ctx.arc(n.x, n.y, n.me ? 5.5 : r, 0, 7); ctx.fill(); }
+      ctx.shadowBlur = 0;
       if (n.kind === "doc" && n.state === "partial") { ctx.strokeStyle = C.locked; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.arc(n.x, n.y, r + 2.4, 0, Math.PI); ctx.stroke(); }
-      if (n.kind === "doc" && n.state === "locked") { ctx.strokeStyle = "rgba(255,226,234,0.45)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(n.x, n.y - 3.2, 1.7, Math.PI, 0); ctx.stroke(); }
+      if (n.kind === "doc" && n.state === "locked") { ctx.strokeStyle = "rgba(17,19,24,0.4)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(n.x, n.y - 3.2, 1.7, Math.PI, 0); ctx.stroke(); }
       if (n.me) {
         const k = (now % 2200) / 2200;
-        ctx.strokeStyle = `rgba(255,210,122,${0.65 * (1 - k)})`; ctx.lineWidth = 1.5;
+        ctx.strokeStyle = `rgba(47,84,235,${0.7 * (1 - k)})`; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(n.x, n.y, 6 + k * 16, 0, 7); ctx.stroke();
       }
       ctx.globalAlpha = 1;
@@ -215,7 +216,7 @@
     data.nodes.forEach((n) => {
       if (!(n.me || n === hover || (n.kind === "team" && S > 7))) return;
       ctx.globalAlpha = lit(n) ? (n.me || n === hover ? 1 : 0.55) : 0.15;
-      ctx.fillStyle = n.me ? C.me : "#FBE9EF";
+      ctx.fillStyle = n.me ? "#2F54EB" : "#111318";
       const label = n.me ? `You · ${n.label}` : n.label.length > 24 ? n.label.slice(0, 23) + "…" : n.label;
       ctx.fillText(label, n.x, n.me ? n.y + 20 : n.y - (R[n.kind] || 4) - 6);
       ctx.globalAlpha = 1;
@@ -276,7 +277,7 @@
       else layout();
       layoutKey = key;
       const me = d.nodes.find((n) => n.me);
-      if (me) rings.push({ n: me, t0: performance.now(), dur: 1200, color: C.me });
+      if (me) rings.push({ n: me, t0: performance.now(), dur: 1200, color: C.open });
     },
     think(answer) {
       if (!data) return Promise.resolve();
@@ -291,7 +292,7 @@
         path.forEach((n) => involved.add(n.id));
         path.slice(1).forEach((n, i) => {
           const t0 = now + fi * 140 + i * hop, last = i === path.length - 2;
-          pulses.push({ a: path[i], b: n, t0, dur: hop || 1, color: f.leak ? C.bad : i === 0 ? C.me : C.open, strong: true, curve: true,
+          pulses.push({ a: path[i], b: n, t0, dur: hop || 1, color: f.leak ? C.bad : C.open, strong: true, curve: true,
             onEnd: last ? () => rings.push({ n, t0: performance.now(), dur: 900, color: f.leak ? C.bad : C.open }) : null });
           end = Math.max(end, t0 + hop);
         });
