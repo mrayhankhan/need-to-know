@@ -184,7 +184,7 @@ async function runScan() {
   const drift = r.drift.map((f, i) => `<div class="find" id="find-d${i}">
       <div class="card-h"><h3>${esc(f.name)} changed teams but kept old access</h3><span class="pill warn">access drift</span></div>
       <dl class="kv"><dt>Now</dt><dd>${esc(f.title)} (${esc(f.team)})</dd><dt>Moved</dt><dd>from ${esc(f.moved_from)} on ${esc(f.moved_at)}</dd>
-        <dt>Still in</dt><dd>${esc(f.group_name)}, which opens ${f.docs_count} documents: ${f.docs_via_old_team.map(esc).join(", ")}</dd><dt>Proposed fix</dt><dd>${esc(f.fix.summary)}</dd></dl>
+        <dt>Still in</dt><dd>${esc(f.group_name)}. That old membership alone lets him open ${f.docs_count} things: ${f.docs_via_old_team.map(esc).join(", ")}</dd><dt>Proposed fix</dt><dd>${esc(f.fix.summary)}</dd></dl>
       <div class="row gap"><button class="ghost" data-test="d${i}">Test the fix on a copy of the graph</button></div><div class="test-out"></div></div>`).join("");
   $("#scan-out").innerHTML = over + drift || '<div class="card"><p>No oversharing found.</p></div>';
   S.findings = { o: r.overshared, d: r.drift };

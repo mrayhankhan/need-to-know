@@ -64,20 +64,33 @@ def _doc_findings(graph_name: str) -> list[dict]:
     return out
 
 
+TARGETS_FROM_Q = f"""
+MATCH (h:Principal {{id:$h}})-[:MEMBER_OF*0..{config.MAX_HOPS}]->(g:Principal)-[:CAN_READ]->(t)
+RETURN DISTINCT t.id
+"""
+
+
 def _drift_findings(graph_name: str) -> list[dict]:
+    """People still in their old team's group. Lists only what that stale membership alone unlocks."""
     g = db.graph(graph_name)
     cat = access.catalog(graph_name)
     out = []
     for pid, name, title, team, moved_from, moved_at, gid, gname in db.rows(g, DRIFT_Q, ro=True):
-        with_ = access.readable_set(graph_name, pid)
-        group_targets = {r[0] for r in db.rows(g, "MATCH (g:Principal {id:$gid})-[:MEMBER_OF*0..8]->(x:Principal)-[:CAN_READ]->(t) RETURN DISTINCT t.id",
-                                               {"gid": gid}, ro=True)}
-        via_group = sorted({cat.docs[cat.sections[s]["doc"]]["title"] for s in with_
-                            if s in group_targets or cat.sections[s]["doc"] in group_targets
-                            or cat.docs[cat.sections[s]["doc"]]["space"] in group_targets})
+        direct = [r[0] for r in db.rows(g, "MATCH (p:Principal {id:$pid})-[:MEMBER_OF]->(h) RETURN h.id", {"pid": pid}, ro=True)]
+        own = {r[0] for r in db.rows(g, "MATCH (p:Principal {id:$pid})-[:CAN_READ]->(t) RETURN t.id", {"pid": pid}, ro=True)}
+        other = set(own)
+        for h in direct:
+            if h != gid:
+                other |= {r[0] for r in db.rows(g, TARGETS_FROM_Q, {"h": h}, ro=True)}
+        stale = {r[0] for r in db.rows(g, TARGETS_FROM_Q, {"h": gid}, ro=True)}
+        with_all = {sid for sid in cat.sections if access.readable(cat, other | stale, sid)}
+        without = {sid for sid in cat.sections if access.readable(cat, other, sid)}
+        lost = with_all - without
+        labels = sorted({f"{cat.docs[cat.sections[x]['doc']]['title']}: {cat.sections[x]['label']}"
+                         if cat.sections[x]["restricted"] else cat.docs[cat.sections[x]["doc"]]["title"] for x in lost})
         out.append({"type": "drift", "person": pid, "name": name, "title": title, "team": team,
                     "moved_from": moved_from, "moved_at": moved_at, "group": gid, "group_name": gname,
-                    "docs_via_old_team": via_group[:8], "docs_count": len(via_group),
+                    "docs_via_old_team": labels[:10], "docs_count": len(labels),
                     "fix": {"action": "remove_membership", "person": pid, "group": gid,
                             "summary": f"Remove {name} from {gname} (moved to {team.title()} on {moved_at})"}})
     return out
