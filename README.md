@@ -7,11 +7,11 @@ to read. Everything else comes back as a redaction bar that says what is missing
 grant it. Every person and every AI agent has its own private memory, and when one agent hands
 work to another, anything the receiver may not see stays behind.
 
-- **Live demo:** _Hugging Face Space link_
+- **Live demo:** https://mrayhankhan.github.io/need-to-know/ (every response in it was computed by the real FalkorDB backend in CI; run it locally to ask anything)
 - **Video (3 min):** _YouTube link_
 - **Tracks:** Company Brain (primary) · Agent Memory and Coordination · Agents That Act on Connected Data
 
-![Same question, two people: the intern sees redaction bars where the Finance head sees the contract value](docs/compare.png)
+![Ask: a support intern gets the pricing policy with sources; the contract value is hidden and she is told who to ask](docs/ask.png)
 
 ---
 
@@ -81,10 +81,10 @@ compared with ground truth computed **independently in plain Python** from the c
 
 | | |
 |---|---|
-| ![Ask, with the access path and redactions](docs/ask.png) | ![Two agents share a case; with access checks off the contract value leaks into the reply](docs/agents-off.png) |
-| **Ask:** cited facts, redaction bars, and the membership chain behind each fact | **Agents:** with access checks off, the Finance-only note leaks into the customer reply, and approval is refused |
-| ![Oversharing scan with a fix tested on a GRAPH.COPY fork](docs/oversharing.png) | ![Benchmark: graph vs flat list vs no check](docs/proof.png) |
-| **Oversharing:** 211 people can open the salary sheet; the fix is tested on a fork first | **Proof:** the benchmark, live |
+| ![Same question, two people](docs/compare.png) | ![What the brain knows](docs/company.png) |
+| **Same question, two people:** the intern and the Head of Finance get different answers | **Company:** teams, customers and owners, decisions, AI agents, and private memory |
+| ![Two agents share a case](docs/agents-off.png) | ![Health check](docs/health.png) |
+| **Agents at work:** without access checks the contract value leaks into the customer reply and approval is refused | **Health check:** 211 people can open the salary sheet; the fix is tested on a copy first |
 
 ## Graph data model
 
@@ -163,13 +163,12 @@ python -m ntk.eval                     # the benchmark above
 
 ## A 3-minute tour
 
-1. **Ask** as Priya, a support intern: *"Why did Acme Corp's invoice go up in October?"* She gets the pricing policy and a redaction bar for the contract value.
-2. **Same question, two people:** Priya next to Meera, Head of Finance. Meera sees *₹38,00,000 a year, 18% discount ended Sept 30*. Priya does not.
-3. Switch **Access check: Off**. The red LEAK badges are what a plain document chatbot would show.
-4. **Agents & handoffs:** run the case, then run it again with access checks off. Watch the contract value appear in the customer reply, and the approval being refused.
-5. **Private memory:** try to read Meera's memories as Priya. The count is 0, and the page shows the query that proves why.
-6. **Oversharing:** scan, test the salary-sheet fix on a fork (211 → 3 readers, everyone who should keep access keeps it), approve it, and see the decision recorded.
-7. **Proof:** the benchmark table, live.
+1. **Ask**, viewing as Priya (support intern): *"Why did Acme Corp's invoice go up in October?"* She gets the pricing policy with its source, and a quiet line saying the contract value is hidden, with who to ask.
+2. Under the answer, **see how someone else sees this**: pick Meera, Head of Finance. She sees *₹38,00,000 a year, 18% discount ended Sept 30*.
+3. **Company:** what the brain knows (teams, customers and their owners, decisions, AI agents) and what it remembers about you. Try reading someone else's memory: 0 reachable.
+4. **Agents at work:** run the case, then run it without access checks. The contract value lands in the customer reply and approval is refused.
+5. **Health check:** the salary sheet reaches 211 people instead of 3. Test the fix on a copy (211 → 3, nobody who needs it loses access), approve it, and see it recorded.
+6. **How it works:** ask one question with the full graph check, a simple permission list, and no check, side by side, plus the measured results.
 
 ## Tracks
 
