@@ -237,7 +237,7 @@ function renderHow() {
     <div class="hero left"><h1>How it works</h1><p class="muted">A company brain is only useful if people can trust it with private things. Need-to-Know does that with a graph.</p></div>
     <div class="grid">
       <div class="card"><span class="num">1</span><h3>Everything becomes a graph</h3><p class="muted">People, teams, groups, AI agents, documents, tickets, chats, customers and decisions are nodes in FalkorDB. Who can open what is stored as connections.</p></div>
-      <div class="card"><span class="num">2</span><h3>Every question follows your path</h3><p class="muted">Access often comes through groups inside groups. One FalkorDB query follows every chain from you to each document, in about 0.3 milliseconds.</p></div>
+      <div class="card"><span class="num">2</span><h3>Every question follows your path</h3><p class="muted">Access often comes through groups inside groups. One FalkorDB query follows every chain from you to each document, in under half a millisecond.</p></div>
       <div class="card"><span class="num">3</span><h3>The AI only sees what you can</h3><p class="muted">The graph decides what you may see. Hidden text is never sent to an AI model, so it cannot leak it.</p></div>
     </div>
     <div class="card"><h3>Try it without the graph</h3>
