@@ -92,16 +92,17 @@ code { font-family: var(--mono); font-size: 12px; background: var(--glass-2); pa
 .notice { margin: 16px auto 0; max-width: 1100px; border: 1px solid var(--edge); background: var(--glass); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--muted); }
 
 /* the brain stage */
-.stage { position: relative; border: 1px solid var(--edge); border-radius: 24px; overflow: hidden; min-height: 470px;
+.stage { position: relative; border: 1px solid var(--edge); border-radius: 24px; overflow: hidden; min-height: 460px;
   background: radial-gradient(120% 90% at 50% 0%, rgba(94,234,212,.06), transparent 60%), rgba(8, 12, 24, .55);
   box-shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05); }
-.stage-copy { position: absolute; left: 28px; top: 24px; z-index: 2; max-width: 360px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.ask-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.stage-copy { max-width: 620px; display: flex; flex-direction: column; gap: 10px; }
 .stage-copy p { color: var(--muted); font-size: 14px; }
 .kicker { display: inline-flex; align-items: center; gap: 8px; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
 .kicker .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 12px var(--teal); }
 @media (prefers-reduced-motion: no-preference) { .kicker .dot { animation: beat 1.6s ease-in-out infinite; } @keyframes beat { 50% { transform: scale(1.6); opacity: .5; } } }
 #hero-title { background: linear-gradient(100deg, #FFFFFF 10%, var(--teal) 55%, var(--violet) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 420px; }
 .pills span { font-size: 12px; border: 1px solid var(--edge); background: rgba(0,0,0,.25); border-radius: 999px; padding: 3px 10px; color: var(--muted); }
 .pills b { color: var(--ink); font-weight: 600; }
 .brain { position: absolute; inset: 0; }
@@ -115,7 +116,7 @@ code { font-family: var(--mono); font-size: 12px; background: var(--glass-2); pa
 .hero { display: flex; flex-direction: column; gap: 8px; }
 .hero.left p { max-width: 64ch; }
 .ask { display: flex; gap: 8px; border: 1px solid var(--edge); border-radius: 18px; padding: 7px 7px 7px 18px; background: rgba(12,17,30,.75);
-  backdrop-filter: blur(12px); box-shadow: 0 10px 40px rgba(0,0,0,.35); transition: border-color .25s, box-shadow .25s; margin-top: -42px; position: relative; z-index: 3; }
+  backdrop-filter: blur(12px); box-shadow: 0 10px 40px rgba(0,0,0,.35); transition: border-color .25s, box-shadow .25s; position: relative; z-index: 3; }
 .ask:focus-within { border-color: rgba(94,234,212,.6); box-shadow: 0 0 0 4px rgba(94,234,212,.12), 0 10px 40px rgba(0,0,0,.35); }
 .ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; padding: 10px 0; font-size: 16px; }
 .ask input::placeholder { color: var(--faint); }
@@ -235,8 +236,8 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
   .viewer { width: 100%; justify-content: space-between; }
   .view { padding: 16px 16px 40px; }
   #notice { padding: 0 16px; }
-  .stage { min-height: 560px; }
-  .stage-copy { left: 18px; right: 18px; top: 18px; max-width: none; }
+  .stage { min-height: 380px; }
+  .pills { justify-content: flex-start; }
   .legend { gap: 10px; padding: 0 12px; }
   .ask { margin-top: 0; }
   .split { grid-template-columns: 1fr; }
