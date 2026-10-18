@@ -14,15 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ntk ./ntk
 COPY web ./web
 COPY start.sh .
-RUN find / -xdev -name 'falkordb.so' 2>/dev/null | head -1 > /app/.falkordb_module \
- && (command -v redis-server || find / -xdev -name redis-server -type f 2>/dev/null | head -1) > /app/.redis_server \
- && cat /app/.falkordb_module /app/.redis_server \
- && chmod +x start.sh \
- && (id -u 1000 >/dev/null 2>&1 || useradd -m -u 1000 user) \
- && mkdir -p /data && chown -R 1000:1000 /app /data
+RUN chmod +x start.sh && mkdir -p /data && chmod -R a+rwX /app /data
 
 USER 1000
-ENV PORT=7860 FALKORDB_HOST=127.0.0.1 FALKORDB_PORT=6379
+ENV PORT=7860 FALKORDB_HOST=127.0.0.1 FALKORDB_PORT=6379 HOME=/tmp
 EXPOSE 7860
 ENTRYPOINT []
 CMD ["/app/start.sh"]
