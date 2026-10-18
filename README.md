@@ -3,7 +3,7 @@
 **A company brain that knows who is allowed to know what.** Built on [FalkorDB](https://falkordb.com) for Graph Hacks 2026.
 
 Ask it anything about the company. It answers with sources, but only from what *you* are allowed
-to read. Everything else comes back as a redaction bar that says what is missing and who could
+to read. Everything else comes back as a locked line that says what is missing and who could
 grant it. Every person and every AI agent has its own private memory, and when one agent hands
 work to another, anything the receiver may not see stays behind.
 
@@ -26,7 +26,7 @@ document chatbot answers from whatever it finds. That is a leak waiting to happe
 
 | | |
 |---|---|
-| **Answers with clearance** | Same question, different people, different answers. Facts are cited with their source and owner. Withheld facts become redaction bars that name the groups that could grant them and the person to ask. |
+| **Answers with clearance** | Same question, different people, different answers. Facts are cited with their source and owner. Withheld facts are listed as hidden, naming the groups that could grant them and the person to ask. |
 | **Shows why** | For every fact, the exact chain of group memberships that grants it: *Meera Iyer → Leadership → Contract value*. |
 | **Private memory per person and per agent** | Memories hang off their owner in the graph. Every memory query starts at the asker's own node, so there is no path to anyone else's. |
 | **Agents that share a case safely** | A Support Agent and a Finance Agent work one customer case. The Finance Agent writes a Finance-only note. When the case comes back, that note is redacted for the Support Agent, so the customer reply cannot contain the contract value. A person approves the reply. |
@@ -180,7 +180,7 @@ python -m ntk.eval                     # the benchmark above
 
 * Access is decided by graph traversal, never by the model.
 * The model never sees restricted text.
-* Redaction bars reveal that something exists and who could grant it. Hiding it entirely is a one-line policy change.
+* Hidden-item notes reveal that something exists and who could grant it. Hiding it entirely is a one-line policy change.
 * Fixes are tested on a copy and applied only after a person approves, with a decision record.
 * All data is synthetic.
 
