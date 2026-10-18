@@ -192,7 +192,8 @@ def _summarise(question, facts, redacted, decisions, remembered, use_llm) -> dic
             text += f" {hidden} relevant item{'s are' if hidden > 1 else ' is'} restricted."
         return {"text": text, "by": "template", "hidden": hidden}
     lead = facts[0]["text"]
-    extra = f" {facts[1]['text']}" if len(facts) > 1 and len(lead) < 160 else ""
+    second = facts[1] if len(facts) > 1 else None
+    extra = f" {second['text']}" if second and len(lead) < 160 and second["source"]["kind"] != "ticket" else ""
     text = lead + extra
     if hidden:
         text += f" {hidden} more item{'s are' if hidden > 1 else ' is'} restricted for you."

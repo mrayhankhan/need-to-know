@@ -50,7 +50,8 @@ function setMode(m) {
 /* ---------- ask ---------- */
 function factHTML(f) {
   const w = f.why;
-  const path = w ? w.names.map((n, i) => `<b>${esc(n)}</b>${i < w.names.length - 1 ? " → " : ""}`).join("") : "";
+  const chain = w ? w.names.slice(0, -1) : [];
+  const path = chain.map((n, i) => `<b>${esc(n)}</b>${i < chain.length - 1 ? " → " : ""}`).join("");
   return `<div class="fact ${f.leak ? "leak" : ""}">
     <div class="row gap"><span class="lab">${esc(f.label)}</span>${f.leak ? '<span class="pill bad">LEAK: not allowed</span>' : ""}${f.restricted && !f.leak ? '<span class="pill dark">restricted · cleared</span>' : ""}</div>
     <p>${esc(f.text)}</p>
@@ -84,7 +85,8 @@ async function ask(q) {
   drawPath(a);
   const mc = $("#mem-card");
   mc.hidden = !a.memory.length;
-  $("#mem-snip").innerHTML = a.memory.map((m) => `<div class="mem"><time>${esc(m.ts.replace("T", " ").slice(0, 16))}</time>${esc(m.text)}</div>`).join("");
+  const seenMem = new Set();
+  $("#mem-snip").innerHTML = a.memory.filter((m) => !seenMem.has(m.text) && seenMem.add(m.text)).map((m) => `<div class="mem"><time>${esc(m.ts.replace("T", " ").slice(0, 16))}</time>${esc(m.text)}</div>`).join("");
 }
 
 /* ---------- access path: one row per chain of memberships ---------- */
@@ -101,7 +103,7 @@ function drawPath(a) {
   });
   let html = "";
   chains.forEach(({ w, f, out }) => {
-    const parts = w.names.map((n, i) => node(n, i === 0 ? (w.kinds[i] === "Agent" ? "AI agent" : "you") : "member of", i === 0 ? "person" : ""));
+    const parts = w.names.slice(0, -1).map((n, i) => node(n, i === 0 ? (w.kinds[i] === "Agent" ? "AI agent" : "you") : "member of", i === 0 ? "person" : ""));
     const tgt = w.target.startsWith("sp_") ? f.source.space : w.target === f.id ? f.label : f.source.title;
     parts.push(node(tgt, "can read", "grant"));
     html += `<div class="chain">${parts.join('<span class="arrow">→</span>')}<span class="arrow">⇒</span>${out.map((x) => node(x.label, x.restricted ? "restricted passage" : "passage", x.leak ? "leak" : "ok")).join("")}</div>`;
@@ -150,7 +152,9 @@ async function runCase(mode) {
 async function loadMemory() {
   $("#mem-who").textContent = nameOf(S.asker);
   const m = await api(`/api/memory?tenant=${S.tenant}&asker=${S.asker}`);
-  $("#mem-list").innerHTML = m.length ? m.map((e) => `<div class="mem"><time>${esc(e.ts.replace("T", " ").slice(0, 16))} · ${esc(e.kind)}${e.about.length ? " · " + esc(e.about.join(", ")) : ""}</time>${esc(e.text)}</div>`).join("") : '<p class="muted small">No memories yet. Ask something on the Ask tab.</p>';
+  const seen = new Set();
+  const uniq = m.filter((e) => !seen.has(e.text) && seen.add(e.text));
+  $("#mem-list").innerHTML = uniq.length ? uniq.map((e) => `<div class="mem"><time>${esc(e.ts.replace("T", " ").slice(0, 16))} · ${esc(e.kind)}${e.about.length ? " · " + esc(e.about.join(", ")) : ""}</time>${esc(e.text)}</div>`).join("") : '<p class="muted small">No memories yet. Ask something on the Ask tab.</p>';
 }
 async function peek() {
   const owner = $("#peek-owner").value;
