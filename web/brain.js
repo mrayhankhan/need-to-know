@@ -49,8 +49,8 @@
   const toBox = (px, py) => [(px - OX) / S, (py - OY) / S];
 
   function fit() {
-    S = Math.min(W / 104, (H - 30) / 76);
-    OX = (W - 100 * S) / 2; OY = (H - 74 * S) / 2 + 4;
+    S = Math.min(W / 104, (H - 56) / 76);
+    OX = (W - 100 * S) / 2; OY = Math.max(10, (H - 56 - 74 * S) / 2 + 8);
   }
 
   function inside(path, bx, by) { return tester.isPointInPath(path, bx, by); }
@@ -137,14 +137,14 @@
     for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(62, 51.5 + k * 1.6); g.bezierCurveTo(70, 49.5 + k * 1.9, 82, 50 + k * 1.9, 94, 53 + k * 1.4); g.strokeStyle = "rgba(255,214,226,0.13)"; g.lineWidth = 0.35; g.stroke(); }
     g.restore();
     g.lineCap = "round";
-    SULCI.forEach((d, i) => { g.strokeStyle = `rgba(245,154,178,${i < 2 ? 0.42 : 0.24})`; g.lineWidth = i < 2 ? 0.55 : 0.4; g.stroke(new Path2D(d)); });
+    SULCI.forEach((d, i) => { g.strokeStyle = `rgba(245,154,178,${i < 2 ? 0.3 : 0.15})`; g.lineWidth = i < 2 ? 0.38 : 0.26; g.stroke(new Path2D(d)); });
     g.shadowColor = "rgba(245,154,178,0.6)"; g.shadowBlur = 14;
     g.strokeStyle = "rgba(245,154,178,0.7)"; g.lineWidth = 0.45;
     g.stroke(P.stem); g.stroke(P.cerebellum); g.stroke(P.cerebrum);
     g.shadowBlur = 0;
-    g.font = "600 1.5px Geist, system-ui, sans-serif"; g.textAlign = "center"; g.fillStyle = "rgba(255,226,234,0.5)";
-    Object.values(LOBES).forEach((L) => { g.fillText(L.label.split("").join(" "), L.at[0], L.at[1]); });
-    g.fillStyle = "rgba(255,226,234,0.5)"; g.textAlign = "left"; g.fillText("F A L K O R D B", 61.5, 72);
+    g.font = "600 1.7px Geist, system-ui, sans-serif"; g.textAlign = "center"; g.fillStyle = "rgba(255,226,234,0.55)";
+    Object.values(LOBES).forEach((L) => { g.fillText(L.label, L.at[0], L.at[1]); });
+    g.textAlign = "left"; g.fillText("FALKORDB · brain stem", 61.5, 70.5);
     texture = c;
   }
 

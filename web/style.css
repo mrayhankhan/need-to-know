@@ -93,7 +93,7 @@ code { font-family: var(--mono); font-size: 12px; background: var(--glass-2); pa
 .notice { margin: 16px auto 0; max-width: 1100px; border: 1px solid var(--edge); background: var(--glass); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--muted); }
 
 /* the brain stage */
-.stage { position: relative; border: 1px solid var(--edge); border-radius: 24px; overflow: hidden; min-height: 460px;
+.stage { position: relative; border: 1px solid var(--edge); border-radius: 24px; overflow: hidden; min-height: 600px;
   background: radial-gradient(120% 90% at 50% 0%, rgba(245,154,178,.06), transparent 60%), rgba(20, 11, 18, .55);
   box-shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05); }
 .ask-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
@@ -237,7 +237,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
   .viewer { width: 100%; justify-content: space-between; }
   .view { padding: 16px 16px 40px; }
   #notice { padding: 0 16px; }
-  .stage { min-height: 380px; }
+  .stage { min-height: 360px; }
   .pills { justify-content: flex-start; }
   .legend { gap: 10px; padding: 0 12px; }
   .ask { margin-top: 0; }
