@@ -74,6 +74,7 @@ main { padding-block: 22px 40px; }
 .intro { gap: 10px; }
 .banner { border-radius: 10px; padding: 10px 14px; font-weight: 500; }
 .banner.off { background: var(--leak-soft); color: var(--leak); border: 1px solid var(--leak); }
+.banner.info { background: var(--card); border: 1px solid var(--line); color: var(--muted); font-weight: 400; font-size: 13px; }
 .banner.flat { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); }
 
 .askbox { display: flex; gap: 8px; flex-wrap: wrap; }

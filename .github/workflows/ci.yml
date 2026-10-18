@@ -49,6 +49,25 @@ jobs:
         with:
           name: results
           path: results/
+      - name: Build the static demo (responses computed by FalkorDB above)
+        run: python scripts/snapshot.py site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  pages:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
 
   container:
     runs-on: ubuntu-latest

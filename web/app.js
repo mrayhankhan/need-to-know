@@ -4,7 +4,39 @@ const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const initials = (n) => n.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
+/* Static demo (GitHub Pages): answers come from responses the real FalkorDB backend produced in CI. */
+let SNAP = null;
+const STATIC_AUDIT = [];
+let lastCaseMode = "graph";
+async function staticApi(path, body) {
+  if (!SNAP) SNAP = await (await fetch(window.NTK_STATIC)).json();
+  const u = new URL(path, location.href), q = (k) => u.searchParams.get(k), p = u.pathname.replace(/^.*\/api\//, "");
+  const need = (v, msg) => { if (v === undefined) throw new Error(msg || "Not part of the static demo. Run the app locally to try anything."); return v; };
+  const ask = (t, a, qq, m) => need(SNAP.ask[[t, a, qq, m].join("|")], "The static demo answers the sample questions. Run it locally (one docker command, see the README) to ask anything.");
+  switch (p) {
+    case "health": return SNAP.health;
+    case "tenants": return SNAP.tenants;
+    case "people": return SNAP.people[q("tenant")];
+    case "ask": return ask(body.tenant, body.asker, body.question, body.mode);
+    case "compare": return body.askers.map((a) => ask(body.tenant, a, body.question, body.mode));
+    case "memory": return SNAP.memory[q("tenant")]?.[q("asker")] || [];
+    case "memory/peek": return need(SNAP.peek[q("tenant")]?.[q("asker")]?.[q("owner")]);
+    case "case/run": lastCaseMode = body.mode; return need(SNAP.case[body.mode]);
+    case "case/approve": return SNAP.approve[lastCaseMode];
+    case "scan": return SNAP.scan[q("tenant")];
+    case "scan/test": return need(SNAP.scan_test[JSON.stringify(sortKeys(body.fix))]);
+    case "scan/apply": { const r = need(SNAP.scan_apply[JSON.stringify(sortKeys(body.fix))]); STATIC_AUDIT.splice(0, STATIC_AUDIT.length, ...r.audit); return r; }
+    case "audit": return STATIC_AUDIT;
+    case "eval": return SNAP.eval;
+    case "stats": return SNAP.stats[q("tenant")];
+    case "reset": STATIC_AUDIT.length = 0; return { ok: true };
+  }
+  throw new Error("Not part of the static demo.");
+}
+function sortKeys(o) { return Object.fromEntries(Object.keys(o).sort().map((k) => [k, o[k]])); }
+
 async function api(path, body) {
+  if (window.NTK_STATIC) return staticApi(path, body);
   const opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
   const r = await fetch(path, opt);
   const data = await r.json().catch(() => ({}));
@@ -80,7 +112,9 @@ async function ask(q) {
   q = (q || $("#q").value).trim();
   if (!q) return;
   $("#q").value = q;
-  const a = await busy($("#answer"), () => api("/api/ask", { tenant: S.tenant, asker: S.asker, question: q, mode: S.mode }));
+  let a;
+  try { a = await busy($("#answer"), () => api("/api/ask", { tenant: S.tenant, asker: S.asker, question: q, mode: S.mode })); }
+  catch (e) { $("#answer").innerHTML = `<div class="ans"><p class="summary">${esc(e.message)}</p></div>`; return; }
   $("#answer").innerHTML = answerHTML(a);
   drawPath(a);
   const mc = $("#mem-card");
@@ -121,7 +155,9 @@ function drawPath(a) {
 async function compare() {
   const q = $("#cq").value.trim(); if (!q) return;
   const askers = [$("#ca").value, $("#cb").value];
-  const res = await busy($("#cmp"), () => api("/api/compare", { tenant: S.tenant, question: q, askers, mode: S.mode }));
+  let res;
+  try { res = await busy($("#cmp"), () => api("/api/compare", { tenant: S.tenant, question: q, askers, mode: S.mode })); }
+  catch (e) { $("#cmp").innerHTML = `<div class="ans"><p class="summary">${esc(e.message)}</p></div>`; return; }
   $("#cmp").innerHTML = res.map((a) => `<div class="col">${answerHTML(a, nameOf(a.asker) + " · " + (S.personas.find((p) => p.id === a.asker)?.title || ""))}</div>`).join("");
 }
 
@@ -270,6 +306,12 @@ $("#tenant").onchange = async (e) => { S.tenant = e.target.value; await loadPeop
     const h = await api("/api/health");
     $("#health").textContent = `FalkorDB ${h.ok ? "connected" : "unreachable"} · language model ${h.llm ? "on" : "off (deterministic answers)"}`;
   } catch { $("#health").textContent = "API unreachable"; }
+  if (window.NTK_STATIC) {
+    const b = document.createElement("div");
+    b.className = "banner info";
+    b.innerHTML = `Static demo: every answer, redaction, handoff and scan result on this page was computed by the real FalkorDB backend in CI${SNAP?.built_from ? " for commit <code>" + esc(SNAP.built_from) + "</code>" : ""}. Pick the sample questions and people. To query it live, run it with one docker command (see the <a href="https://github.com/mrayhankhan/need-to-know">README</a>).`;
+    document.querySelector("main").prepend(b);
+  }
   await loadTenants();
   await loadPeople();
   const hash = location.hash.slice(1);
