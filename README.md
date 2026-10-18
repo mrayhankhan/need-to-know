@@ -77,6 +77,15 @@ compared with ground truth computed **independently in plain Python** from the c
 * A full access check takes **~0.3 to 0.4 ms** (median). That is about **3,500 checks per second** across 8 threads and about **5,000 concurrent memory writes per second**.
 * Reproduce with `python -m ntk.eval`. CI runs it on every push ([`ci.yml`](.github/workflows/ci.yml)), together with 13 tests and screenshots of every screen.
 
+## Screens
+
+| | |
+|---|---|
+| ![Ask, with the access path and redactions](docs/ask.png) | ![Two agents share a case; with access checks off the contract value leaks into the reply](docs/agents-off.png) |
+| **Ask:** cited facts, redaction bars, and the membership chain behind each fact | **Agents:** with access checks off, the Finance-only note leaks into the customer reply, and approval is refused |
+| ![Oversharing scan with a fix tested on a GRAPH.COPY fork](docs/oversharing.png) | ![Benchmark: graph vs flat list vs no check](docs/proof.png) |
+| **Oversharing:** 211 people can open the salary sheet; the fix is tested on a fork first | **Proof:** the benchmark, live |
+
 ## Graph data model
 
 ```mermaid

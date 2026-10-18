@@ -259,6 +259,10 @@ $("#run-case-off").onclick = () => runCase("off");
 $("#peek").onclick = peek;
 $("#run-scan").onclick = runScan;
 $("#run-eval").onclick = loadEval;
+$("#reset-demo").onclick = async (e) => {
+  await busy(e.target, () => api("/api/reset", { tenant: S.tenant }));
+  location.reload();
+};
 $("#tenant").onchange = async (e) => { S.tenant = e.target.value; await loadPeople(); $("#answer").innerHTML = ""; $("#pathviz").innerHTML = ""; };
 
 (async function boot() {
