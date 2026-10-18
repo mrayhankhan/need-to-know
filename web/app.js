@@ -81,54 +81,38 @@ async function ask(q) {
   $("#q").value = q;
   const a = await busy($("#answer"), () => api("/api/ask", { tenant: S.tenant, asker: S.asker, question: q, mode: S.mode }));
   $("#answer").innerHTML = answerHTML(a);
-  drawPath(a.graph);
+  drawPath(a);
   const mc = $("#mem-card");
   mc.hidden = !a.memory.length;
   $("#mem-snip").innerHTML = a.memory.map((m) => `<div class="mem"><time>${esc(m.ts.replace("T", " ").slice(0, 16))}</time>${esc(m.text)}</div>`).join("");
 }
 
-/* ---------- access path diagram (layered, left to right) ---------- */
-function drawPath(g) {
+/* ---------- access path: one row per chain of memberships ---------- */
+function drawPath(a) {
   const box = $("#pathviz");
-  if (!g.nodes.length) { box.innerHTML = '<p class="muted small">Nothing found.</p>'; return; }
-  const depth = {};
-  const kids = {};
-  g.edges.forEach((e) => { (kids[e.from] ||= []).push(e.to); });
-  const incoming = new Set(g.edges.map((e) => e.to));
-  const roots = g.nodes.filter((n) => !incoming.has(n.id) && n.state !== "hidden").map((n) => n.id);
-  const queue = roots.map((r) => [r, 0]);
-  while (queue.length) {
-    const [id, d] = queue.shift();
-    if ((depth[id] ?? -1) >= d) continue;
-    depth[id] = d;
-    (kids[id] || []).forEach((k) => queue.push([k, d + 1]));
+  const node = (label, kind, cls) => `<span class="node ${cls || ""}"><small>${esc(kind)}</small><span>${esc(label)}</span></span>`;
+  const chains = new Map();
+  const unchecked = [];
+  a.facts.forEach((f) => {
+    if (!f.why) { unchecked.push(f); return; }
+    const key = f.why.ids.join(">") + "|" + f.why.target;
+    if (!chains.has(key)) chains.set(key, { w: f.why, f, out: [] });
+    chains.get(key).out.push(f);
+  });
+  let html = "";
+  chains.forEach(({ w, f, out }) => {
+    const parts = w.names.map((n, i) => node(n, i === 0 ? (w.kinds[i] === "Agent" ? "AI agent" : "you") : "member of", i === 0 ? "person" : ""));
+    const tgt = w.target.startsWith("sp_") ? f.source.space : w.target === f.id ? f.label : f.source.title;
+    parts.push(node(tgt, "can read", "grant"));
+    html += `<div class="chain">${parts.join('<span class="arrow">→</span>')}<span class="arrow">⇒</span>${out.map((x) => node(x.label, x.restricted ? "restricted passage" : "passage", x.leak ? "leak" : "ok")).join("")}</div>`;
+  });
+  if (unchecked.length) {
+    html += `<div class="chain">${node(nameOf(a.asker), "you", "person")}<span class="arrow">→</span>${node("no access check", "mode " + a.mode, "leak")}<span class="arrow">⇒</span>${unchecked.map((x) => node(x.label, x.leak ? "LEAKED" : "passage", x.leak ? "leak" : "ok")).join("")}</div>`;
   }
-  const maxD = Math.max(0, ...Object.values(depth));
-  g.nodes.forEach((n) => { if (n.kind === "Section") depth[n.id] = maxD + (n.state === "hidden" ? 0 : 0); });
-  const cols = {};
-  g.nodes.forEach((n) => { const d = depth[n.id] ?? maxD; (cols[d] ||= []).push(n); });
-  const ncol = Math.max(...Object.keys(cols).map(Number)) + 1;
-  const W = Math.max(460, ncol * 150), rowH = 46;
-  const H = Math.max(...Object.values(cols).map((c) => c.length)) * rowH + 30;
-  const pos = {};
-  Object.entries(cols).forEach(([d, list]) => list.forEach((n, i) => { pos[n.id] = { x: 14 + Number(d) * ((W - 150) / Math.max(1, ncol - 1)), y: 20 + i * rowH }; }));
-  const color = (n) => n.state === "hidden" ? "var(--redact)" : n.state === "leak" ? "var(--leak)" : n.kind === "Section" ? "var(--cleared)" : n.kind === "Grant" ? "var(--accent)" : "var(--ink)";
-  const edges = g.edges.filter((e) => pos[e.from] && pos[e.to]).map((e) => {
-    const a = pos[e.from], b = pos[e.to];
-    const x1 = a.x + 128, y1 = a.y + 15, x2 = b.x, y2 = b.y + 15, mx = (x1 + x2) / 2;
-    return `<path d="M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}" fill="none" stroke="${e.kind === "NO_CHECK" ? "var(--leak)" : "var(--line)"}" stroke-width="2" ${e.kind === "NO_CHECK" ? 'stroke-dasharray="5 4"' : ""}/>`;
-  }).join("");
-  const nodes = g.nodes.map((n) => {
-    const p = pos[n.id]; if (!p) return "";
-    const c = color(n), label = n.label.length > 22 ? n.label.slice(0, 21) + "…" : n.label;
-    const kind = n.state === "hidden" ? "REDACTED" : n.kind === "Grant" ? "GRANTED ON" : n.kind.toUpperCase();
-    const fill = n.state === "hidden" ? "var(--redact)" : "var(--card)";
-    const tcol = n.state === "hidden" ? "var(--redact-ink)" : "var(--ink)";
-    return `<g><rect x="${p.x}" y="${p.y}" width="128" height="30" rx="${n.kind === "Person" || n.kind === "Agent" ? 15 : 6}" fill="${fill}" stroke="${c}" stroke-width="1.5"/>
-      <text class="k" x="${p.x + 8}" y="${p.y - 3}">${kind}</text>
-      <text x="${p.x + 8}" y="${p.y + 19}" style="fill:${tcol}">${esc(label)}</text></g>`;
-  }).join("");
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Access path from you to each passage">${edges}${nodes}</svg>`;
+  if (a.redacted.length) {
+    html += `<div class="chain"><span class="small muted">Withheld from you:</span>${a.redacted.map((r) => node(r.label, "redacted", "hidden")).join("")}</div>`;
+  }
+  box.innerHTML = html || '<p class="muted small">Nothing found.</p>';
 }
 
 /* ---------- compare ---------- */
@@ -282,4 +266,5 @@ $("#tenant").onchange = async (e) => { S.tenant = e.target.value; await loadPeop
   await loadPeople();
   const hash = location.hash.slice(1);
   if (["ask", "compare", "agents", "memory", "scan", "proof"].includes(hash)) showTab(hash);
+  if (S.tenant === "northwind") ask(S.samples.northwind[0]);
 })();

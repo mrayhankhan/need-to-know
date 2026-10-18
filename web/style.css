@@ -17,6 +17,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body { background: var(--desk); color: var(--ink); font: 15px/1.55 var(--body); }
 .wrap { max-width: 1200px; margin: 0 auto; padding-inline: 20px; }
@@ -114,10 +115,19 @@ main { padding-block: 22px 40px; }
 .mem time { display: block; font: 500 11px var(--mono); color: var(--muted); }
 
 /* path diagram */
-.pathviz { overflow-x: auto; }
-.pathviz svg { display: block; min-width: 460px; width: 100%; height: auto; }
-.pathviz text { font: 500 11px var(--body); fill: var(--ink); }
-.pathviz .k { font: 600 9px var(--mono); fill: var(--muted); letter-spacing: .06em; }
+.pathviz { display: flex; flex-direction: column; gap: 12px; }
+.chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-bottom: 12px; border-bottom: 1px dashed var(--line); }
+.chain:last-child { border-bottom: 0; padding-bottom: 0; }
+.node { display: inline-flex; flex-direction: column; border: 1.5px solid var(--ink); border-radius: 7px; padding: 3px 9px; background: var(--card); line-height: 1.25; }
+.node small { font: 600 9px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.node span { font-size: 13px; font-weight: 500; }
+.node.person { border-radius: 999px; }
+.node.grant { border-color: var(--accent); }
+.node.ok { border-color: var(--cleared); background: var(--cleared-soft); }
+.node.leak { border-color: var(--leak); background: var(--leak-soft); }
+.node.hidden { background: var(--redact); border-color: var(--redact); }
+.node.hidden span, .node.hidden small { color: var(--redact-ink); }
+.arrow { color: var(--muted); font: 600 13px var(--mono); }
 
 /* agents */
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }

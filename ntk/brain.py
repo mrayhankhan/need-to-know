@@ -17,7 +17,8 @@ from . import access, db, llm, memory
 
 STOP = set("""a an and are as at be but by can could did do does for from had has have how i if in into is it its
 me my of on or our should so than that the their them then there these they this to us was we were what when where
-which who whom why will with would you your about any much many tell please give show know need""".split())
+which who whom why will with would you your about any much many tell please give show know need don doesn isn""".split())
+EXPLAIN_KINDS = {"policy", "chat", "postmortem"}
 
 SEARCH_Q = """
 CALL db.idx.fulltext.queryNodes('Section', $q) YIELD node, score
@@ -64,8 +65,16 @@ def _customers_in(graph_name: str, question: str) -> list[tuple[str, str]]:
     return found
 
 
-def retrieve(graph_name: str, question: str, limit: int = 7) -> tuple[list[str], list[tuple[str, str]]]:
-    """Rank passages: FalkorDB full-text score, plus term overlap, plus a boost for named customers."""
+def _stem_hit(term: str, words: set[str]) -> bool:
+    k = term[:4] if len(term) >= 4 else term
+    return any(w.startswith(k) for w in words)
+
+
+def retrieve(graph_name: str, question: str, limit: int = 8) -> tuple[list[str], list[tuple[str, str]]]:
+    """Rank passages by FalkorDB full-text score, overlap with the question's content words,
+    the customers it names, and (for "why" questions) whether a passage explains something.
+    Passages that match only on a customer's name, or that are about a different customer,
+    are dropped, so answers stay on the question."""
     g = db.graph(graph_name)
     cat = access.catalog(graph_name)
     terms = keywords(question)
@@ -75,20 +84,38 @@ def retrieve(graph_name: str, question: str, limit: int = 7) -> tuple[list[str],
         for sid, score in db.rows(g, SEARCH_Q, {"q": q}, ro=True):
             ft[sid] = max(ft.get(sid, 0.0), float(score or 0))
     customers = _customers_in(graph_name, question)
+    named = {c for c, _ in customers}
+    entity_words = {w for _, n in customers for w in re.findall(r"[a-z0-9]+", n.lower())}
+    content = [t for t in terms if t not in entity_words]
     linked: set[str] = set()
     if customers:
-        linked = {r[0] for r in db.rows(g, CUSTOMER_SECTIONS_Q, {"customers": [c for c, _ in customers]}, ro=True)}
+        linked = {r[0] for r in db.rows(g, CUSTOMER_SECTIONS_Q, {"customers": list(named)}, ro=True)}
+    why = any(w in question.lower() for w in WHY_WORDS)
     top_ft = max(ft.values(), default=0.0) or 1.0
     scored = {}
     for sid in set(ft) | linked:
         s = cat.sections.get(sid)
         if not s:
             continue
-        words = set(re.findall(r"[a-z0-9]+", (s["label"] + " " + s["text"] + " " + cat.docs[s["doc"]]["title"]).lower()))
-        overlap = sum(1 for t in terms if any(w.startswith(t[:5]) for w in words)) / max(1, len(terms))
-        scored[sid] = ft.get(sid, 0.0) / top_ft + overlap + (0.5 if sid in linked else 0.0)
+        about = cat.mentions.get(sid, set())
+        if named and about and not (about & named):
+            continue  # about some other customer
+        d = cat.docs[s["doc"]]
+        words = set(re.findall(r"[a-z0-9]+", (s["label"] + " " + s["text"] + " " + d["title"]).lower()))
+        hits = sum(1 for t in content if _stem_hit(t, words))
+        if content and hits == 0:
+            continue  # matched only on the customer's name
+        overlap = hits / len(content) if content else 1.0
+        score = 0.5 * ft.get(sid, 0.0) / top_ft + overlap + (0.4 if sid in linked else 0.0)
+        if why:
+            text = s["text"].lower()
+            if d["kind"] in EXPLAIN_KINDS or " why " in f" {text} " or "because" in text:
+                score += 0.9
+            if d["kind"] == "ticket":
+                score -= 0.3
+        scored[sid] = score
     ranked = sorted(scored, key=lambda x: (-scored[x], x))
-    return [x for x in ranked if scored[x] >= 0.34][:limit], customers
+    return [x for x in ranked if scored[x] >= 0.3][:limit], customers
 
 
 def _fact(cat, sid):

@@ -71,6 +71,9 @@ class Catalog:
             self.sections[sid] = {"id": sid, "label": label, "text": text, "restricted": bool(restricted), "doc": did}
             self.docs[did] = {"id": did, "title": title, "kind": kind, "updated": updated, "space": spid,
                               "space_name": spname, "owner": owner, "owner_id": owner_id}
+        self.mentions: dict[str, set[str]] = {}
+        for sid, cid in db.rows(g, "MATCH (s:Section)-[:MENTIONS]->(c:Customer) RETURN s.id, c.id", ro=True):
+            self.mentions.setdefault(sid, set()).add(cid)
 
     def targets_for(self, sid: str) -> list[str]:
         """Grant targets that would make this section readable."""
