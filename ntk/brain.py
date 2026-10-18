@@ -64,25 +64,31 @@ def _customers_in(graph_name: str, question: str) -> list[tuple[str, str]]:
     return found
 
 
-def retrieve(graph_name: str, question: str, limit: int = 6) -> tuple[list[str], list[tuple[str, str]]]:
+def retrieve(graph_name: str, question: str, limit: int = 7) -> tuple[list[str], list[tuple[str, str]]]:
+    """Rank passages: FalkorDB full-text score, plus term overlap, plus a boost for named customers."""
     g = db.graph(graph_name)
+    cat = access.catalog(graph_name)
     terms = keywords(question)
-    scored: dict[str, float] = {}
+    ft: dict[str, float] = {}
     if terms:
         q = "|".join(f"{t}*" if len(t) > 4 else t for t in terms)
         for sid, score in db.rows(g, SEARCH_Q, {"q": q}, ro=True):
-            scored[sid] = max(scored.get(sid, 0.0), float(score))
+            ft[sid] = max(ft.get(sid, 0.0), float(score or 0))
     customers = _customers_in(graph_name, question)
+    linked: set[str] = set()
     if customers:
         linked = {r[0] for r in db.rows(g, CUSTOMER_SECTIONS_Q, {"customers": [c for c, _ in customers]}, ro=True)}
-        for sid in list(scored):
-            if sid in linked:
-                scored[sid] *= 2.0
-        # A named customer pulls in its own passages even if the wording differs.
-        for sid in linked:
-            scored.setdefault(sid, 0.5)
-    ranked = sorted(scored, key=lambda s: -scored[s])
-    return ranked[:limit], customers
+    top_ft = max(ft.values(), default=0.0) or 1.0
+    scored = {}
+    for sid in set(ft) | linked:
+        s = cat.sections.get(sid)
+        if not s:
+            continue
+        words = set(re.findall(r"[a-z0-9]+", (s["label"] + " " + s["text"] + " " + cat.docs[s["doc"]]["title"]).lower()))
+        overlap = sum(1 for t in terms if any(w.startswith(t[:5]) for w in words)) / max(1, len(terms))
+        scored[sid] = ft.get(sid, 0.0) / top_ft + overlap + (0.5 if sid in linked else 0.0)
+    ranked = sorted(scored, key=lambda x: (-scored[x], x))
+    return [x for x in ranked if scored[x] >= 0.34][:limit], customers
 
 
 def _fact(cat, sid):
