@@ -13,7 +13,7 @@
   const R = { team: 4.8, group: 3.6, person: 2.3, agent: 4.2, space: 4.8, doc: 3, customer: 4.4 };
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let cv, ctx, W = 0, H = 0, dpr = 1, data = null, byId = {}, edges = [], pulses = [], rings = [], focus = null, focusUntil = 0;
-  let hover = null, tip, raf, lastSpawn = 0, layoutKey = "", S = 1, OX = 0, OY = 0, texture = null;
+  let hover = null, tip, raf, lastSpawn = 0, layoutKey = "", S = 1, OX = 0, OY = 0, texture = null, plate = false;
 
   /* ---- anatomy, in a 100 x 74 box, facing left ---- */
   const CEREBRUM = "M9 40 C3 32 4 18 14 11 C22 4 38 1 52 2 C68 3 82 7 90 16 C97 24 98 36 93 43 C90 47 85 49 79 49 C73 49 68 50 64 52 C58 56 50 58 42 57 C33 56 25 55 19 51 C16 49 17 46 21 44 C16 45 11 44 9 40 Z";
@@ -32,13 +32,17 @@
     "M60 28 C67 27 74 29 82 33",
     "M30 52 C40 51 50 50 58 49",
   ];
+  // Wide screens: labels sit outside the brain with a leader line (side, y, anchor), like an anatomy plate.
+  // Narrow screens: a short label inside the lobe (short, at).
   const LOBES = {
-    frontal: { c: [23, 24], r: [10, 11], label: "LEADERSHIP & DECISIONS", at: [22, 9] },
-    parietal: { c: [61, 17], r: [16, 8], label: "TEAMS & PEOPLE", at: [62, 6.5] },
-    occipital: { c: [84, 31], r: [7.5, 10], label: "CUSTOMER-FACING", at: [86, 20] },
-    temporal: { c: [41, 48.5], r: [17, 4.6], label: "COMPANY MEMORY", at: [40, 55] },
-    cerebellum: { c: [77, 58], r: [8.5, 4], label: "AI AGENTS", at: [78, 68.5] },
+    frontal: { c: [23, 24], r: [10, 11], label: "LEADERSHIP & DECISIONS", side: "l", y: 12, anchor: [14, 17], short: "LEADERSHIP", at: [27, 11] },
+    parietal: { c: [61, 17], r: [16, 8], label: "TEAMS & PEOPLE", side: "r", y: 5, anchor: [72, 8], short: "TEAMS", at: [62, 7] },
+    occipital: { c: [84, 31], r: [7.5, 10], label: "CUSTOMER-FACING", side: "r", y: 27, anchor: [90, 29], short: "CUSTOMERS", at: [84, 21] },
+    temporal: { c: [41, 48.5], r: [17, 4.6], label: "COMPANY MEMORY", side: "l", y: 55, anchor: [26, 51.5], short: "MEMORY", at: [42, 54.8] },
+    cerebellum: { c: [77, 58], r: [8.5, 4], label: "AI AGENTS", side: "r", y: 57, anchor: [87, 58], short: "AI AGENTS", at: [78, 69.5] },
+    stem: { label: "FALKORDB", side: "r", y: 71, anchor: [58.5, 70], short: "FALKORDB", at: [51.5, 71], right: true },
   };
+  const ROOM = 220; // px kept free on each side for outside labels
   const TEAM_LOBE = { finance: "frontal", legal: "frontal", hr: "frontal", engineering: "parietal", product: "parietal",
     operations: "parietal", marketing: "parietal", sales: "occipital", support: "occipital" };
   const P = { cerebrum: new Path2D(CEREBRUM), cerebellum: new Path2D(CEREBELLUM), stem: new Path2D(STEM) };
@@ -49,8 +53,9 @@
   const toBox = (px, py) => [(px - OX) / S, (py - OY) / S];
 
   function fit() {
-    S = Math.min(W / 104, (H - 56) / 76);
-    OX = (W - 100 * S) / 2; OY = Math.max(10, (H - 56 - 74 * S) / 2 + 8);
+    plate = W >= 960;
+    S = Math.min(plate ? (W - 2 * ROOM) / 100 : W / 104, (H - 56) / 76);
+    OX = (W - 100 * S) / 2; OY = Math.max(16, (H - 56 - 74 * S) / 2 + 10);
   }
 
   function inside(path, bx, by) { return tester.isPointInPath(path, bx, by); }
@@ -123,34 +128,66 @@
     tissue(P.stem, 0.05, 0.025);
     tissue(P.cerebellum, 0.05, 0.02);
     tissue(P.cerebrum, 0.03, 0.012);
+    // gyri: thin meandering folds, drawn as smooth curves through a wandering walk
     g.save(); g.clip(P.cerebrum);
     const r = rng("gyri");
-    g.lineCap = "round";
-    for (let k = 0; k < 70; k++) {
-      let x = 6 + r() * 90, y = 2 + r() * 56;
-      g.beginPath(); g.moveTo(x, y);
-      for (let s = 0; s < 6; s++) { const nx = x + (r() - 0.5) * 9, ny = y + (r() - 0.5) * 7; g.quadraticCurveTo((x + nx) / 2 + (r() - 0.5) * 4, (y + ny) / 2 + (r() - 0.5) * 4, nx, ny); x = nx; y = ny; }
-      g.strokeStyle = "rgba(17,19,24,0.05)"; g.lineWidth = 0.9 + r() * 0.8; g.stroke();
+    g.lineCap = "round"; g.lineJoin = "round";
+    for (let k = 0; k < 64; k++) {
+      let x = 6 + r() * 90, y = 3 + r() * 54, a = r() * 6.283;
+      const pts = [[x, y]];
+      for (let s = 0; s < 18; s++) { a += (r() - 0.5) * 1.5; x += Math.cos(a) * 1.25; y += Math.sin(a) * 1.25; pts.push([x, y]); }
+      g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length - 1; i++) g.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
+      g.strokeStyle = `rgba(17,19,24,${0.06 + r() * 0.05})`; g.lineWidth = 0.14; g.stroke();
     }
     g.restore();
     g.save(); g.clip(P.cerebellum);
-    for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(62, 51.5 + k * 1.6); g.bezierCurveTo(70, 49.5 + k * 1.9, 82, 50 + k * 1.9, 94, 53 + k * 1.4); g.strokeStyle = "rgba(17,19,24,0.16)"; g.lineWidth = 0.35; g.stroke(); }
+    for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(62, 51.5 + k * 1.6); g.bezierCurveTo(70, 49.5 + k * 1.9, 82, 50 + k * 1.9, 94, 53 + k * 1.4); g.strokeStyle = "rgba(17,19,24,0.14)"; g.lineWidth = 0.16; g.stroke(); }
     g.restore();
-    g.lineCap = "round";
-    SULCI.forEach((d, i) => { g.strokeStyle = `rgba(17,19,24,${i < 2 ? 0.3 : 0.14})`; g.lineWidth = i < 2 ? 0.38 : 0.26; g.stroke(new Path2D(d)); });
-    g.shadowBlur = 0;
-    g.strokeStyle = "rgba(17,19,24,0.85)"; g.lineWidth = 0.3;
+    g.save(); g.clip(P.stem);
+    for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(52 + k * 2, 57); g.bezierCurveTo(54 + k * 2, 62, 55 + k * 1.6, 68, 54.5 + k * 1.5, 74); g.strokeStyle = "rgba(17,19,24,0.1)"; g.lineWidth = 0.14; g.stroke(); }
+    g.restore();
+    SULCI.forEach((d, i) => { g.strokeStyle = `rgba(17,19,24,${i < 2 ? 0.34 : 0.16})`; g.lineWidth = i < 2 ? 0.3 : 0.2; g.stroke(new Path2D(d)); });
+    g.strokeStyle = "rgba(17,19,24,0.88)"; g.lineWidth = 0.28;
     g.stroke(P.stem); g.stroke(P.cerebellum); g.stroke(P.cerebrum);
-    g.shadowBlur = 0;
     // labels in real pixels (tiny scaled fonts get broken letter spacing)
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const fs = Math.max(9, Math.min(12, S * 1.35));
-    g.font = `600 ${fs}px Geist, system-ui, sans-serif`; g.textAlign = "center"; g.fillStyle = "rgba(17,19,24,0.4)";
-    if ("letterSpacing" in g) g.letterSpacing = "1.5px";
-    Object.values(LOBES).forEach((L) => { const [x, y] = toPx(L.at[0], L.at[1]); g.fillText(L.label, x, y); });
-    g.textAlign = "right"; const [sx, sy] = toPx(51.5, 71); g.fillText("FALKORDB", sx, sy);
-    if ("letterSpacing" in g) g.letterSpacing = "0px";
+    const spaced = (px) => { if ("letterSpacing" in g) g.letterSpacing = px; };
+    if (plate) {
+      const lx = OX + 3 * S - 26, rx = OX + 98 * S + 26, room = Math.max(60, OX + 3 * S - 34);
+      const fit1 = (t) => { if (g.measureText(t).width <= room) return t; while (t.length > 4 && g.measureText(t + "…").width > room) t = t.slice(0, -1); return t + "…"; };
+      Object.entries(LOBES).forEach(([key, L]) => {
+        const [ax, ay] = toPx(L.anchor[0], L.anchor[1]), ty = OY + L.y * S, left = L.side === "l", tx = left ? lx : rx;
+        g.strokeStyle = "rgba(17,19,24,0.32)"; g.lineWidth = 0.75;
+        g.beginPath(); g.moveTo(ax, ay); g.lineTo(tx + (left ? 10 : -10), ty - 4); g.lineTo(tx + (left ? 4 : -4), ty - 4); g.stroke();
+        g.fillStyle = "#111318"; g.beginPath(); g.arc(ax, ay, 2, 0, 7); g.fill();
+        g.textAlign = left ? "right" : "left";
+        g.font = "600 10.5px Geist, system-ui, sans-serif"; spaced("1.6px"); g.fillStyle = "rgba(17,19,24,0.72)";
+        g.fillText(L.label, tx, ty);
+        g.font = "400 12px Geist, system-ui, sans-serif"; spaced("0px"); g.fillStyle = "rgba(17,19,24,0.46)";
+        const sub = caption(key);
+        if (sub) g.fillText(fit1(sub), tx, ty + 17);
+      });
+    } else {
+      g.font = "600 9px Geist, system-ui, sans-serif"; spaced("1.2px"); g.fillStyle = "rgba(17,19,24,0.5)";
+      Object.values(LOBES).forEach((L) => { const [x, y] = toPx(L.at[0], L.at[1]); g.textAlign = L.right ? "right" : "center"; g.fillText(L.short, x, y); });
+    }
+    spaced("0px");
     texture = c;
+  }
+
+  // the small grey line under each outside label, taken from the live graph
+  function caption(lobe) {
+    if (!data) return "";
+    const ns = data.nodes, count = (k) => ns.filter((n) => n.kind === k).length;
+    const teams = (l) => {
+      const t = ns.filter((n) => n.kind === "team" && (TEAM_LOBE[n.team] || "parietal") === l).map((n) => n.label);
+      return t.length > 3 ? `${t.slice(0, 2).join(" · ")} · +${t.length - 2} more` : t.join(" · ");
+    };
+    if (lobe === "temporal") return `${count("space")} spaces · ${count("doc")} docs · ${count("customer")} customers`;
+    if (lobe === "cerebellum") { const a = count("agent"); return `${a} agent${a === 1 ? "" : "s"}, same rules as people`; }
+    if (lobe === "stem") return "the graph underneath it all";
+    return teams(lobe);
   }
 
   function lit(n) { return !focus || focus.has(n.id); }
